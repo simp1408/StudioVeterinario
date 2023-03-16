@@ -1,0 +1,71 @@
+﻿@model StudioVeterinario.Models.Animale
+
+@{
+    ViewBag.Title = "CercaByChip";
+}
+
+<h2>Cerca il tuo animale smarrito</h2>
+<p>inserisci il numero del microchip qui sotto</p>
+
+<input type="text" name="Microchip" class="form-control" placeholder="scrivi microchip..." id="RicercaChip" />
+<input type="button" name="Microchip" value="Cerca" class="form-control" id="cerca" style="background-color:cornflowerblue;color:white;margin-top:10px;" />
+
+<div class="mt-5" style="width:300px;">
+    <div class="card w-100" data-tilt>
+        <div id="animale" class=" d-flex flex-column align-items-center justify-content-center"></div>
+
+    </div>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function () {
+
+    $('.card').hide();
+        var but = $("#cerca");
+
+    but.click(function () {
+
+            let InputChip = $('#RicercaChip').val();
+           
+           
+            $.ajax({
+                url: 'CercaByChipInput',
+                method: 'GET',
+                data: { 'microchip': InputChip },
+                success: function (animale) {
+                    if (animale == "ERROR") {
+                        $('.card').show();
+                        $('#animale').empty();
+
+                        $('#animale').text("nessun animale presente con questo N. di chip");
+                    } else {
+                        var date = new Date(parseInt(animale.DataInizioRicovero.substr(6)));
+                        var today = new Date();
+                        var ricovero = today.getTime() - date.getTime();
+                        //calcolo il numero dei giorni
+                        var inClinicaDal = Math.floor(ricovero / 86400000);
+
+                        $('.card').show();
+                        $('#animale').empty();
+                        $('#animale').append(
+                           /* (animale.Foto != null ? "<img src='Content/img" + animale.Foto + "' />" : "<img src='Content/img/nofoto.jpg'/>")*/
+                          (animale.Foto != null ? "<img src='/Content/img/"+animale.Foto+"'>" : "<img style='width:250px; height:250px; object-fit:cover;' class='rounded-3' src='/Content/img/nofoto.jpg' />")
+                            + "<br/>" +
+                            "<p>" + animale.Nome + "</p>" + '</br>' +
+                            "Nr.microchip:" + animale.NumeroMicrochip + '</br>' +
+                            "In clinica da:" + inClinicaDal + "giorni"
+                        )
+                    }
+                },
+
+                error: function (er) {
+                    $('.card').show();
+                    $('#animale').text(er);
+
+
+                }
+            });
+        });
+    });
+</script>
+
