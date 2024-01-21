@@ -22,6 +22,7 @@ namespace StudioVeterinario.Controllers
             //qui faccaimo una select ed include sta per inner join
             var animale = db.Animale.Include(a => a.TipologiaAnimale);
             return View(animale.ToList());
+
         }
 
         // GET: Animale/Details/5
@@ -58,26 +59,31 @@ namespace StudioVeterinario.Controllers
         // Per altri dettagli, vedere https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "ID_Animale,DataRegistrazione,Nome,ColoreMantello,DataNascita,Microchip,NumeroMicrochip,NominativoProprietario,Smarrito,FileFoto,DataInizioRicovero,Id_TipologiaAnimale")] Animale animale)
+        public ActionResult Create(Animale animale, HttpPostedFileBase FileFoto)
         {
             //gestiamo l inserimento della foto
             if (ModelState.IsValid)
             {
                 
-                if (animale.FileFoto != null)
+                if (FileFoto != null)
                 {
-                    
+                        
+                        animale.Foto = FileFoto.FileName;
                         //andiamo a salvare il file immagine mettendoci il percorso
-                        string Path = Server.MapPath("/Content/img/" + animale.FileFoto.FileName);
-                        animale.FileFoto.SaveAs(Path);
-                        animale.Foto = animale.FileFoto.FileName;
-
-                    
-                }
-                animale.DataRegistrazione=DateTime.Now;
-                db.Animale.Add(animale);
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                        string Path = Server.MapPath("/Content/img/" + animale.Foto);
+                        FileFoto.SaveAs(Path);
+                        animale.DataRegistrazione=DateTime.Now;
+                        db.Animale.Add(animale);
+                        db.SaveChanges();
+                        return RedirectToAction("Index");
+                        }
+                        else
+                        {
+                            animale.DataRegistrazione = DateTime.Now;
+                            db.Animale.Add(animale);
+                            db.SaveChanges();
+                            return RedirectToAction("Index");
+                        }
             }
 
             ViewBag.Id_TipologiaAnimale = new SelectList(db.TipologiaAnimale, "ID_TipologiaAnimale", "Nome", animale.Id_TipologiaAnimale);
@@ -108,16 +114,16 @@ namespace StudioVeterinario.Controllers
         // Per altri dettagli, vedere https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "ID_Animale,DataRegistrazione,Nome,ColoreMantello,DataNascita,Microchip,NumeroMicrochip,NominativoProprietario,Smarrito,Foto,DataInizioRicovero,Id_TipologiaAnimale")] Animale animale,HttpPostedFileBase Foto)
+        public ActionResult Edit([Bind(Include = "ID_Animale,Nome,ColoreMantello,DataNascita,Microchip,NumeroMicrochip,NominativoProprietario,Smarrito,Foto,Id_TipologiaAnimale")] Animale animale,HttpPostedFileBase FileFoto)
         {
             if (ModelState.IsValid)
             {
                 //mi creo l oggetto animaleInDb e con il find mi vado a prendere l id dell animale
               Animale animaleInDb = db.Animale.Find(animale.ID_Animale);
                 //mi vado a gestire il null della foto
-                if (Foto != null) 
+                if (FileFoto != null) 
                 {
-                    animaleInDb.Foto = Foto.FileName;
+                    animaleInDb.Foto = FileFoto.FileName;
                 }
 
                 
@@ -129,9 +135,7 @@ namespace StudioVeterinario.Controllers
                 animaleInDb.NumeroMicrochip=animale.NumeroMicrochip;
                 animaleInDb.NominativoProprietario=animale.NominativoProprietario;
                 animaleInDb.Smarrito = animale.Smarrito;
-                animaleInDb.DataInizioRicovero = animale.DataInizioRicovero;
-          
-
+                animaleInDb.Id_TipologiaAnimale = animale.Id_TipologiaAnimale;
                 db.Entry(animaleInDb).State = EntityState.Modified;
                 db.SaveChanges();
                 return RedirectToAction("Index");
@@ -213,40 +217,41 @@ namespace StudioVeterinario.Controllers
        
         public JsonResult AnimaliRitrovati(string tipologiaAnimale)
         {
+            //select ANIMALE.Smarrito, TipologiaAnimale.Nome from animale inner join TipologiaAnimale on animale.Id_TipologiaAnimale = TipologiaAnimale.ID_TipologiaAnimale where Animale.Smarrito=1 AND TipologiaAnimale.Nome='Cane'
             List<Animale> listaTipologiaAnimale = db.Animale.Where(x=>x.TipologiaAnimale.Nome==tipologiaAnimale && x.Smarrito==true).ToList();
             if (listaTipologiaAnimale != null)
             {
                 List<Animale> listaAnimale = new List<Animale>();
 
-                //avendo una lista utilizzere un foreach per navigare la lista
-                foreach( var animale in listaAnimale)
+                //avendo una lista utilizzeremo un foreach per navigare la lista
+                foreach (var animale in listaTipologiaAnimale)
                 {
                     Animale an = new Animale();
-                    an.ID_Animale=animale.ID_Animale;
-                    an.DataRegistrazione= animale.DataRegistrazione;
-                    an.Nome=animale.Nome;
+                    an.ID_Animale = animale.ID_Animale;
+                    an.DataRegistrazione = animale.DataRegistrazione;
+                    an.Nome = animale.Nome;
                     an.ColoreMantello = animale.ColoreMantello;
-                    an.DataNascita=animale.DataNascita;
-                    an.Foto=animale.Foto;
+                    an.DataNascita = animale.DataNascita;
+                    an.Foto = animale.Foto;
                     an.NominativoProprietario = animale.NominativoProprietario;
-                    an.Microchip=animale.Microchip;
-                    an.NumeroMicrochip=animale.NumeroMicrochip;
-                    an.DataInizioRicovero=animale.DataInizioRicovero;
-                    an.Smarrito=animale.Smarrito;
+                    an.Microchip = animale.Microchip;
+                    an.NumeroMicrochip = animale.NumeroMicrochip;
+                    an.DataInizioRicovero = animale.DataInizioRicovero;
+                    an.Smarrito = animale.Smarrito;
                     listaAnimale.Add(an);
                 }
 
                 return Json(listaAnimale, JsonRequestBehavior.AllowGet);
-            }
+        }
             else
             {
                 return Json("ERROR", JsonRequestBehavior.AllowGet);
 
-            }
+    }
 
 
 
-        }
+}
 
         protected override void Dispose(bool disposing)
         {
